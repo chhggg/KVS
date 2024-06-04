@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 
@@ -30,12 +31,15 @@ int find_key(const char *key) {
 
 int handle_client(int sd){
     char buf[MAX_BUF];
+
     while(1){
+        memset(buf, 0, MAX_BUF);
         if(recv(sd, buf, MAX_BUF-1, 0) <= 0) break;
         buf[MAX_BUF] = '\0';
 
         char *command = strtok(buf, " ");
-        if(strcmp(command, "SET") == 0){
+        for(int i = 0; i<strlen(command); i++) command[i] = tolower(command[i]); 
+        if(strcmp(command, "set") == 0){
             char* key = strtok(NULL, " ");
             char* val = strtok(NULL, " ");
 
@@ -64,13 +68,13 @@ int handle_client(int sd){
             }
 
         }
-        else if(strcmp(command, "GET") == 0){
+        else if(strcmp(command, "get") == 0){
             char* key = strtok(NULL, "\r\n");
             if(key){
                 int idx = find_key(key);
                 if(idx != -1){
-                    char res[MAX_BUF];
-                    snprintf(res, MAX_BUF, "$%zu\r\n%s\r\n", strlen(kv_store[idx].value), kv_store[idx].value);
+                    char res[MAX_BUF * 2];
+                    sprintf(res, "$%zu\r\n%s\r\n", strlen(kv_store[idx].value), kv_store[idx].value);
                     send(sd, res, strlen(res), 0);
                 }
                 else{
@@ -96,8 +100,7 @@ int main(int argc, char* argv[]){
         return -1;
     }
     
-    const char *server_ip = argv[1];
-    int server_port = atoi(argv[2]);
+    int server_port = atoi(argv[1]);
     
     int sd = socket(AF_INET, SOCK_STREAM, 0);
     if(sd == -1){
