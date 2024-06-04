@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #define MAX_KEY 10
 #define MAX_BUF 1024
@@ -29,7 +30,9 @@ int find_key(const char *key) {
     return -1;
 }
 
-int handle_client(int sd){
+void* handle_client(void * arg){
+    int sd = *((int *)arg);
+
     char buf[MAX_BUF];
 
     while(1){
@@ -135,7 +138,13 @@ int main(int argc, char* argv[]){
             continue;
         }
 
-        handle_client(newsd);
+        pthread_t thread_id;
+        if (pthread_create(&thread_id, NULL, (void*)handle_client, (void *)&newsd) != 0) {
+            perror("pthread_create");
+            close(newsd);
+            continue;
+        }
+        pthread_detach(thread_id); 
     }
 
     close(sd);
