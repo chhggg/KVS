@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#define MAX_BUF 2048
+#define MAX_BUF 1024
 
 void usage(void){
     printf("USAGE : ./client <server_ip> <port_num>\n");
@@ -45,9 +45,7 @@ int main(int argc, char* argv[]){
         char buf[MAX_BUF];
 
         if(fgets(buf, MAX_BUF, stdin) == NULL) break;
-        buf[strlen(buf)-1] = 0;
-
-        if(strncmp(buf, "EXIT", 4) == 0 && strlen(buf) == 4) break;
+        if(strcmp(buf, "EXIT\n") == 0) break;
 
         send(sd, buf, strlen(buf), 0);
         memset(buf, 0, MAX_BUF);

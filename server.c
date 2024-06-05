@@ -38,7 +38,8 @@ void* handle_client(void * arg){
     while(1){
         memset(buf, 0, MAX_BUF);
         if(recv(sd, buf, MAX_BUF-1, 0) <= 0) break;
-        buf[MAX_BUF] = '\0';
+        // del \n
+        buf[strlen(buf)-1] = 0;
 
         char *command = strtok(buf, " ");
         for(int i = 0; i<strlen(command); i++) command[i] = tolower(command[i]); 
@@ -54,26 +55,26 @@ void* handle_client(void * arg){
                         strncpy(kv_store[kv_count].key, key, MAX_BUF);
                         strncpy(kv_store[kv_count].value, val, MAX_BUF);
                         kv_count++;
-                        send(sd, "+OK\r\n", 5, 0);
+                        send(sd, "+OK\r\n", strlen("+OK\r\n"), 0);
                     }
                     else{
-                        send(sd, "-ERR store full\r\n", 17, 0);
+                        send(sd, "-ERR store full\r\n", strlen("-ERR store full\r\n"), 0);
                     }
                 }
                 // key update
                 else{
                     strncpy(kv_store[idx].value, val, MAX_BUF);
-                    send(sd, "+OK\r\n", 5, 0);
+                    send(sd, "+OK\r\n", strlen("+OK\r\n"), 0);
                 }
             }
             else{
-                send(sd, "-ERR invalid command\r\n", 22, 0);
+                send(sd, "-ERR wrong number of arguments\r\n", strlen("-ERR wrong number of arguments\r\n"), 0);
             }
 
         }
         else if(strcmp(command, "get") == 0){
-            char* key = strtok(NULL, "\r\n");
-            if(key){
+            char* key = strtok(NULL, " ");
+            if(key && (strtok(NULL, " ") == NULL)){
                 int idx = find_key(key);
                 if(idx != -1){
                     char res[MAX_BUF * 2];
@@ -81,15 +82,15 @@ void* handle_client(void * arg){
                     send(sd, res, strlen(res), 0);
                 }
                 else{
-                    send(sd, "$-1\r\n", 5, 0);
+                    send(sd, "$-1\r\n", strlen("$-1\r\n"), 0);
                 }
             }
             else{
-                send(sd, "-ERR invalid command\r\n", 22, 0);
+                send(sd, "-ERR wrong number of arguments\r\n", strlen("-ERR wrong number of arguments\r\n"), 0);
             }
         }
         else{
-            send(sd, "-ERR unknown command\r\n", 22, 0);
+            send(sd, "-ERR unknown command\r\n", strlen("-ERR unknown command\r\n"), 0);
         }
     }
     close(sd);
