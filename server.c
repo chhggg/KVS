@@ -32,12 +32,13 @@ int find_key(const char *key) {
 
 void* handle_client(void * arg){
     int sd = *((int *)arg);
+    free(arg);
 
     char buf[MAX_BUF];
 
     while(1){
         memset(buf, 0, MAX_BUF);
-        if(recv(sd, buf, MAX_BUF-1, 0) <= 0) break;
+        if(recv(sd, buf, MAX_BUF, 0) <= 0) break;
         // del \n
         buf[strlen(buf)-1] = 0;
 
@@ -77,7 +78,7 @@ void* handle_client(void * arg){
             if(key && (strtok(NULL, " ") == NULL)){
                 int idx = find_key(key);
                 if(idx != -1){
-                    char res[MAX_BUF * 2];
+                    char res[MAX_BUF + 9];
                     sprintf(res, "$%zu\r\n%s\r\n", strlen(kv_store[idx].value), kv_store[idx].value);
                     send(sd, res, strlen(res), 0);
                 }
@@ -131,18 +132,21 @@ int main(int argc, char* argv[]){
     }
 
     while (1) {
-        struct sockaddr_in addr;
-        socklen_t len = sizeof(addr);
-        int newsd = accept(sd, (struct sockaddr *)&addr, &len);
-        if (newsd == -1) {
+        struct sockaddr_in addr_cli;
+        socklen_t len = sizeof(addr_cli);
+        int *newsd = malloc(sizeof(int));
+        *newsd = accept(sd, (struct sockaddr *)&addr_cli, &len);
+        if (*newsd == -1) {
             perror("accept");
+            free(newsd);
             continue;
         }
 
         pthread_t thread_id;
-        if (pthread_create(&thread_id, NULL, (void*)handle_client, (void *)&newsd) != 0) {
+        if (pthread_create(&thread_id, NULL, (void*)handle_client, (void *)newsd) != 0) {
             perror("pthread_create");
-            close(newsd);
+            close(*newsd);
+            free(newsd);
             continue;
         }
         pthread_detach(thread_id); 

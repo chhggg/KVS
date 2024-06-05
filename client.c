@@ -50,7 +50,7 @@ int main(int argc, char* argv[]){
         send(sd, buf, strlen(buf), 0);
         memset(buf, 0, MAX_BUF);
 
-        if(recv(sd, buf, MAX_BUF -1, 0) <= 0) break;
+        if(recv(sd, buf, MAX_BUF, 0) <= 0) break;
         buf[MAX_BUF] = '\0';
         printf("%s", buf);
 
